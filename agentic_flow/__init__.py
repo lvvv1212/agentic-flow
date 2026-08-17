@@ -12,6 +12,15 @@ from agentic_flow.orchestrator import (
     SupervisorOrchestrator,
 )
 from agentic_flow.llm import LLMClient
+from agentic_flow.deepseek import (
+    DeepSeekClient,
+    DeepSeekError,
+    DeepSeekAuthError,
+    DeepSeekRateLimitError,
+    DeepSeekNetworkError,
+    DeepSeekServerError,
+    create_deepseek_agent,
+)
 
 __version__ = "0.1.0"
 
@@ -32,4 +41,11 @@ __all__ = [
     "DebateOrchestrator",
     "SupervisorOrchestrator",
     "LLMClient",
+    "DeepSeekClient",
+    "DeepSeekError",
+    "DeepSeekAuthError",
+    "DeepSeekRateLimitError",
+    "DeepSeekNetworkError",
+    "DeepSeekServerError",
+    "create_deepseek_agent",
 ]
