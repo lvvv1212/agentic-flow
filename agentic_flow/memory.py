@@ -2,6 +2,24 @@
 
 Provides short-term (conversation) memory and long-term (vector) memory
 backed by NumPy cosine similarity — no heavy dependencies required.
+
+.. important::
+    Long-term memory has two modes depending on whether an embedding API is
+    reachable:
+
+    * **Online (real semantic retrieval)** — when an OpenAI-compatible
+      embeddings API is configured (e.g. ``OPENAI_API_KEY`` / a compatible
+      endpoint), entries are embedded into real semantic vectors and
+      ``search()`` returns genuinely similar content.
+    * **Offline (non-semantic fallback)** — when no embedding API is
+      available, entries are embedded as *hash-based pseudo-vectors*
+      (SHA-256 of the text). These have **no semantic meaning**: two
+      paraphrases of the same idea will NOT match. This fallback exists
+      **only** so the framework can run end-to-end offline for development /
+      CI / testing the pipeline. Do **not** rely on its retrieval quality.
+
+    In short: offline mode proves the *flow works*; semantic retrieval
+    requires a real embedding API.
 """
 
 from __future__ import annotations
@@ -65,6 +83,11 @@ def _embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> Any
     """Embed a batch of texts via the OpenAI embeddings API.
 
     Returns a NumPy array of shape ``(len(texts), dim)``.
+
+    If the embedding API is unreachable (no key / no network), this falls back
+    to **hash-based pseudo-embeddings** which have **NO semantic meaning** —
+    they exist only so the pipeline can run offline. Real semantic retrieval
+    requires a working embedding API (see the module docstring).
     """
     import numpy as np
 
@@ -75,7 +98,9 @@ def _embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> Any
         response = client.embeddings.create(input=texts, model=model)
         return np.array([d.embedding for d in response.data], dtype=np.float32)
     except Exception:
-        # Fallback: simple hash-based pseudo-embeddings for offline/test use
+        # NON-SEMANTIC fallback: SHA-256 pseudo-vectors for offline/test use.
+        # Same idea in different words will NOT be similar — retrieval quality
+        # is meaningless here. Use a real embedding API for semantic search.
         dim = 256
         vecs = []
         for t in texts:
@@ -98,8 +123,12 @@ class LongTermMemory:
     """Simple vector store using NumPy cosine similarity.
 
     Stores text entries with metadata and supports semantic retrieval.
-    Falls back to hash-based pseudo-embeddings when no embedding API is
-    available, so the framework works fully offline for development.
+
+    Retrieval is **semantic only when a real embedding API is available**.
+    When the embedding API is unreachable, it falls back to hash-based
+    pseudo-embeddings that let the framework run end-to-end offline for
+    development/testing — but those pseudo-vectors carry **no semantic
+    meaning**, so retrieval quality is not meaningful in offline mode.
 
     Parameters
     ----------

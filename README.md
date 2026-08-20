@@ -211,6 +211,12 @@ result = agent.run("What do I work on?")
 # Agent recalls: "You work on robotics."
 ```
 
+> ⚠️ **离线 vs 语义检索（为什么这么设计）**：`LongTermMemory` 在**没有 embedding API**
+> 时会退化为 hash 伪向量（SHA-256），这些向量**无语义**——同样的意思换种说法不会命中。
+> 之所以保留这个降级，是为了让框架在**零外部服务**时也能端到端跑通（开发 / 单测 / CI），
+> 契合「最小依赖」的定位；但它**只证明流程能跑通，不代表检索质量**。要真正的语义检索，
+> 请配置 embedding API（如 `OPENAI_API_KEY` 或兼容端点）。详见 `agentic_flow/memory.py`。
+
 ## Architecture
 
 ```
